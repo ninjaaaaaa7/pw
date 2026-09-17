@@ -7,3 +7,13 @@
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
+
+/* Respect users who prefer less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

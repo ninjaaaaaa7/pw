@@ -9,12 +9,13 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
 
-# Environment / secrets
+# Environment / secrets (examples and the non-secret dev config stay tracked)
 .env
 .env.*
 !.env.example
-!.env.local.example
+!.env.development
 
 # Next.js build output
 .next/
