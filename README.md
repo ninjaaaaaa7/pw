@@ -17,7 +17,7 @@ table — in your language.**
 
 [![CI](https://github.com/ninjaaaaaa7/pw/actions/workflows/ci.yml/badge.svg)](https://github.com/ninjaaaaaa7/pw/actions/workflows/ci.yml)
 
-> **🔗 Live demo:** _add your Hugging Face Space URL here after deploying (see §6)_
+> **🔗 Live demo:** _add your Render URL here after deploying (see §6)_
 
 ---
 
@@ -170,12 +170,19 @@ docker build -t clausewise .
 docker run -p 7860:7860 -e GEMINI_API_KEY=your_key clausewise
 ```
 
-## 6. Deploying to Hugging Face Spaces
+## 6. Deploying for free (Render)
 
-1. Create a new Space → **Docker** SDK.
-2. Push this repository to the Space (the front-matter at the top of this file configures it).
-3. In *Settings → Variables and secrets* add `GEMINI_API_KEY` as a **secret**.
-   Without it the Space still works, in demo mode.
+The repo ships a [`render.yaml`](render.yaml) blueprint, so deployment is a few clicks:
+
+1. Sign in at <https://render.com> with GitHub and click **New → Blueprint**.
+2. Pick this repository; Render reads `render.yaml` and proposes the `clausewise` web service
+   on the **free** plan.
+3. When prompted, set `GEMINI_API_KEY` (stored as a secret). Leave it blank to run in demo mode.
+4. Click **Apply**. The first build takes ~3 minutes; the health check is `/api/health`.
+
+Free instances sleep after 15 minutes of inactivity, so the first request after a pause takes
+~30-50 seconds to wake. The container honours the host's `PORT` variable, so the same image
+also runs on Hugging Face Spaces (Docker SDK, port 7860), Cloud Run, Railway or Fly.
 
 ## 7. Testing
 

@@ -1,0 +1,14 @@
+# One-click deploy on Render's free tier: https://render.com/deploy
+services:
+  - type: web
+    name: clausewise
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false          # set in the Render dashboard as a secret
+      - key: ALLOWED_ORIGINS
+        value: ""            # UI is same-origin; no cross-origin callers

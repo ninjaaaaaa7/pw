@@ -24,7 +24,8 @@ COPY backend/app ./app
 COPY --from=ui /ui/out ./static
 
 USER appuser
-# Hugging Face Spaces routes traffic to 7860.
+# Hosts inject PORT (Render, Cloud Run, Railway); Hugging Face uses 7860.
+ENV PORT=7860
 EXPOSE 7860
-HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:7860/api/health').status==200 else 1)"
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import os,urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:%s/api/health' % os.environ['PORT']).status==200 else 1)"
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
