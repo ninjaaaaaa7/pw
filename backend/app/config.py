@@ -21,7 +21,7 @@ class Settings:
         self.gemini_base_url: str = os.getenv(
             "GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
         ).rstrip("/")
-        self.request_timeout: float = float(os.getenv("REQUEST_TIMEOUT", "40"))
+        self.request_timeout: float = float(os.getenv("REQUEST_TIMEOUT", "60"))
         self.max_document_chars: int = int(os.getenv("MAX_DOCUMENT_CHARS", "60000"))
         self.rate_limit_per_minute: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "30"))
         self.cache_size: int = int(os.getenv("ANALYSIS_CACHE_SIZE", "128"))

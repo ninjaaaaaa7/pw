@@ -172,6 +172,33 @@ async def test_gemini_key_is_sent_in_header_not_url(monkeypatch):
     assert "secret-key" not in captured["url"]
 
 
+async def test_warm_up_is_noop_without_key(monkeypatch):
+    monkeypatch.setattr(ai_assistant.settings, "gemini_api_key", "")
+    called = False
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal called
+        called = True
+        return httpx.Response(200, json={})
+
+    monkeypatch.setattr(ai_assistant, "_client", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    await ai_assistant.warm_up()
+    assert called is False
+
+
+async def test_warm_up_opens_connection_and_swallows_errors(monkeypatch):
+    monkeypatch.setattr(ai_assistant.settings, "gemini_api_key", "k")
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.method)
+        raise httpx.ConnectError("offline")
+
+    monkeypatch.setattr(ai_assistant, "_client", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    await ai_assistant.warm_up()  # must not raise
+    assert seen == ["GET"]
+
+
 def test_describe_failure_surfaces_api_message_without_secrets():
     request = httpx.Request("POST", "https://example.invalid/v1beta/models/x:generateContent")
     response = httpx.Response(

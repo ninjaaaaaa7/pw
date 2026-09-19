@@ -78,6 +78,7 @@ rate_limiter = RateLimiter(settings.rate_limit_per_minute)
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     logger.info("ClauseWise starting (ai_enabled=%s)", settings.ai_enabled)
+    await ai_assistant.warm_up()
     yield
     await ai_assistant.close_client()
 

@@ -48,7 +48,7 @@ It is a reading aid, not legal advice — the UI, the API and the model prompt a
 | **A smart, dynamic assistant** | Every document is analysed fresh: type detection, clause detection, obligation extraction and risk scoring adapt to the text, and the generative layer explains the result in the user's chosen language. Non-contract documents (court filings, notices) get AI-identified, document-specific risks instead of a blank result. |
 | **Logical decision-making based on user context** | The user's **role** (tenant, freelancer, applicant…) changes the perspective of the summary, the framing of every risk and the three lawyer questions; the **language** changes the output; the detected **document type** switches how the score is derived (rule-based for contracts, flag-derived for filings). Decisions are made by a deterministic, tested engine — the model explains them, it does not make them. |
 | **Practical, real-world usability** | Works in one click with a sample contract; works without an API key; degrades gracefully when the model is slow; deploys as one free container; the UI is WCAG-AA accessible and mobile-responsive; nothing is stored. |
-| **Clean, maintainable code** | Two decoupled layers with typed Pydantic contracts, 63 automated tests, ruff (incl. security rules), strict TypeScript, and CI on every push. |
+| **Clean, maintainable code** | Two decoupled layers with typed Pydantic contracts, 65 automated tests, ruff (incl. security rules), strict TypeScript, and CI on every push. |
 
 ## 2. Approach and logic
 
@@ -198,7 +198,7 @@ also runs on Hugging Face Spaces (Docker SDK, port 7860), Cloud Run, Railway or 
 
 | Suite | Command | Covers |
 |-------|---------|--------|
-| Backend unit + integration (53 tests) | `cd backend && pytest` | every clause rule, scoring bands, obligation extraction, party/lopsidedness logic, prompt grounding, demo fallback on each failure class, cache behaviour, key-in-header, all endpoints, validation, rate limiting, security headers, CORS |
+| Backend unit + integration (55 tests) | `cd backend && pytest` | every clause rule, scoring bands, obligation extraction, party/lopsidedness logic, prompt grounding, demo fallback on each failure class, cache behaviour, key-in-header, all endpoints, validation, rate limiting, security headers, CORS |
 | Frontend unit (10 tests) | `cd frontend && npm test` | runtime response guard, error-message extraction, style helpers |
 | Type safety | `cd frontend && npm run typecheck` | strict TypeScript |
 | Lint / format | `cd backend && ruff check . && ruff format --check .` | includes the `S` (bandit) security rules |

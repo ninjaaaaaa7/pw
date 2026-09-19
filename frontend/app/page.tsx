@@ -231,7 +231,15 @@ export default function Home() {
               </div>
             )}
 
-            {loading && <ResultsSkeleton />}
+            {loading && (
+              <>
+                <p className="text-xs text-slate-600">
+                  Usually 5–10 seconds. The first request after the server has been idle can take up to a
+                  minute while it wakes up.
+                </p>
+                <ResultsSkeleton />
+              </>
+            )}
 
             {!loading && !error && !analysis && (
               <div className="flex min-h-[20rem] flex-1 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/60 p-8 text-center text-sm text-slate-600">

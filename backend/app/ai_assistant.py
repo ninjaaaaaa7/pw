@@ -173,6 +173,23 @@ async def close_client() -> None:
     await _client.aclose()
 
 
+async def warm_up() -> None:
+    """Open the pooled connection to the model API at startup.
+
+    DNS + TLS + HTTP/2 negotiation to Google can add many seconds to the very
+    first request after a cold start; doing it once here keeps the first user
+    request fast. A metadata GET costs no tokens. Failures are ignored - the
+    request path has its own fallback.
+    """
+    if not settings.ai_enabled:
+        return
+    url = f"{settings.gemini_base_url}/models/{settings.gemini_model}"
+    try:
+        await _client.get(url, headers={"x-goog-api-key": settings.gemini_api_key}, timeout=10)
+    except httpx.HTTPError as exc:
+        logger.info("Model API warm-up skipped: %s", type(exc).__name__)
+
+
 async def _call_gemini(prompt: str) -> dict:
     """Single constrained, low-temperature call; returns the parsed JSON body."""
     url = f"{settings.gemini_base_url}/models/{settings.gemini_model}:generateContent"
