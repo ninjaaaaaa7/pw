@@ -17,7 +17,8 @@ table — in your language.**
 
 [![CI](https://github.com/ninjaaaaaa7/pw/actions/workflows/ci.yml/badge.svg)](https://github.com/ninjaaaaaa7/pw/actions/workflows/ci.yml)
 
-> **🔗 Live demo:** _add your Render URL here after deploying (see §6)_
+> **🔗 Live demo:** <https://clausewise-pd5e.onrender.com> — click **Load sample contract** → **Analyze Document**.
+> Hosted on Render's free tier: the first request after 15 idle minutes takes ~30-50 s to wake.
 
 ---
 
