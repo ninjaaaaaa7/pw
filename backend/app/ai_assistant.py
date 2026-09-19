@@ -187,6 +187,17 @@ async def _call_gemini(prompt: str) -> dict:
     return json.loads(text)
 
 
+def _describe_failure(exc: Exception) -> str:
+    """Short, secret-free description of why a model call failed."""
+    if isinstance(exc, httpx.HTTPStatusError):
+        try:
+            message = exc.response.json()["error"]["message"]
+        except (ValueError, KeyError, TypeError):
+            message = exc.response.text[:200]
+        return f"HTTP {exc.response.status_code} - {message}"
+    return type(exc).__name__
+
+
 class _LRUCache:
     """Tiny in-memory LRU so repeated analyses of the same text cost nothing."""
 
@@ -251,9 +262,10 @@ async def run_analysis(request: AnalyzeRequest) -> AnalyzeResponse:
             mode="live",
         )
     except (httpx.HTTPError, ValidationError, KeyError, IndexError, ValueError) as exc:
-        # Never fail the request because the model misbehaved; log the class only
-        # so no document text or key material ends up in logs.
-        logger.warning("Gemini call failed (%s); using demo response", type(exc).__name__)
+        # Never fail the request because the model misbehaved. Log enough to
+        # diagnose (exception class, HTTP status, the API's own error message)
+        # but never the document text or key material.
+        logger.warning("Gemini call failed: %s; using demo response", _describe_failure(exc))
         result = demo_response(analysis, request)
 
     if result.mode == "live":

@@ -160,3 +160,18 @@ async def test_gemini_key_is_sent_in_header_not_url(monkeypatch):
     assert result == {"ok": True}
     assert captured["header"] == "secret-key"
     assert "secret-key" not in captured["url"]
+
+
+def test_describe_failure_surfaces_api_message_without_secrets():
+    request = httpx.Request("POST", "https://example.invalid/v1beta/models/x:generateContent")
+    response = httpx.Response(
+        400, request=request, json={"error": {"message": "API key not valid", "status": "INVALID_ARGUMENT"}}
+    )
+    exc = httpx.HTTPStatusError("bad", request=request, response=response)
+    assert ai_assistant._describe_failure(exc) == "HTTP 400 - API key not valid"
+
+    plain = httpx.Response(502, request=request, text="<html>bad gateway</html>")
+    exc2 = httpx.HTTPStatusError("bad", request=request, response=plain)
+    assert ai_assistant._describe_failure(exc2).startswith("HTTP 502 - <html>")
+
+    assert ai_assistant._describe_failure(ValueError("x")) == "ValueError"
