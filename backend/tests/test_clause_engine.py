@@ -13,15 +13,15 @@ from app.clause_engine import (
     one_sided_toward,
     score_risk,
 )
-from app.models import DetectedClause
+from app.models import DetectedClause, Severity
 from app.sample_data import SAMPLE_DOCUMENT
 
 
-def _clause(severity: str) -> DetectedClause:
+def _clause(severity: Severity) -> DetectedClause:
     return DetectedClause(
         category="x",
         title="x",
-        severity=severity,  # type: ignore[arg-type]
+        severity=severity,
         explanation="",
         excerpt="",
         suggested_question="",

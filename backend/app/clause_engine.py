@@ -17,7 +17,10 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
+from functools import lru_cache
+from typing import Protocol
 
 from .models import ClauseAnalysis, DetectedClause, RiskLevel, Severity
 
@@ -258,6 +261,25 @@ PARTY_DEFINITION = re.compile(r"\((?:the\s+)?[\"“']([A-Z][A-Za-z ]{1,30})[\"�
 SENTENCE_SPLIT = re.compile(r"(?<=[.;:!?])\s+(?=[A-Z(\"“])|\n{2,}")
 WHITESPACE = re.compile(r"\s+")
 
+# Compile every rule and hint pattern exactly once at import time; the hot path
+# then only calls pre-built matchers instead of re-compiling per request.
+_COMPILED_RULES: tuple[tuple[ClauseRule, tuple[re.Pattern[str], ...]], ...] = tuple(
+    (rule, tuple(re.compile(p, re.IGNORECASE) for p in rule.patterns)) for rule in CLAUSE_RULES
+)
+_COMPILED_HINTS: tuple[tuple[str, tuple[re.Pattern[str], ...]], ...] = tuple(
+    (label, tuple(re.compile(p) for p in patterns)) for label, patterns in DOCUMENT_TYPE_HINTS
+)
+
+
+@lru_cache(maxsize=256)
+def _party_pattern(party: str) -> re.Pattern[str]:
+    """Matcher for "<Party> shall/must/..." - cached because party names repeat."""
+    return re.compile(rf"\b{re.escape(party)}\b\s+(shall|must|agrees?|is|will|undertakes)", re.IGNORECASE)
+
+
+class HasSeverity(Protocol):
+    severity: Severity
+
 
 def _sentences(text: str) -> list[str]:
     """Split text into trimmed sentences, dropping fragments too short to matter."""
@@ -275,8 +297,8 @@ def guess_document_type(text: str) -> str:
     """Return the best-matching document type label, or a generic fallback."""
     lowered = text.lower()
     best_label, best_hits = "Legal agreement", 0
-    for label, patterns in DOCUMENT_TYPE_HINTS:
-        hits = sum(len(re.findall(p, lowered)) for p in patterns)
+    for label, patterns in _COMPILED_HINTS:
+        hits = sum(len(p.findall(lowered)) for p in patterns)
         if hits > best_hits:
             best_label, best_hits = label, hits
     return best_label
@@ -285,8 +307,7 @@ def guess_document_type(text: str) -> str:
 def detect_clauses(sentences: list[str]) -> list[DetectedClause]:
     """Apply every rule to every sentence; keep the first hit per category."""
     found: dict[str, DetectedClause] = {}
-    for rule in CLAUSE_RULES:
-        regexes = [re.compile(p, re.IGNORECASE) for p in rule.patterns]
+    for rule, regexes in _COMPILED_RULES:
         for sentence in sentences:
             if any(r.search(sentence) for r in regexes):
                 found[rule.category] = DetectedClause(
@@ -334,9 +355,7 @@ def obligations_by_party(obligations: list[str], parties: list[str]) -> dict[str
     """Count how many obligation sentences name each party as the subject."""
     counts: Counter[str] = Counter()
     for party in parties:
-        pattern = re.compile(
-            rf"\b{re.escape(party)}\b\s+(shall|must|agrees?|is|will|undertakes)", re.IGNORECASE
-        )
+        pattern = _party_pattern(party)
         counts[party] = sum(1 for o in obligations if pattern.search(o))
     return dict(counts)
 
@@ -352,8 +371,12 @@ def one_sided_toward(counts: dict[str, int]) -> str | None:
     return None
 
 
-def score_risk(clauses: list[DetectedClause], lopsided: bool) -> tuple[int, RiskLevel]:
-    """Combine clause weights (and a lopsidedness penalty) into a 0-100 score."""
+def score_risk(clauses: Iterable[HasSeverity], lopsided: bool) -> tuple[int, RiskLevel]:
+    """Combine severity weights (and a lopsidedness penalty) into a 0-100 score.
+
+    Accepts anything with a ``severity`` attribute so the same weights apply to
+    rule-detected clauses and to model-identified risk flags.
+    """
     score = sum(SEVERITY_WEIGHT[c.severity] for c in clauses)
     if lopsided:
         score += 10

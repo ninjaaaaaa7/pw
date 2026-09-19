@@ -8,10 +8,11 @@ secrets or document text in logs.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections import defaultdict, deque
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -40,13 +41,19 @@ SECURITY_HEADERS = {
 class RateLimiter:
     """Sliding-window limiter keyed by client IP. In-memory: fine for one replica."""
 
+    SWEEP_EVERY = 256  # calls between evictions of idle clients
+
     def __init__(self, limit: int, window_seconds: float = 60.0) -> None:
         self.limit = limit
         self.window = window_seconds
         self._hits: dict[str, deque[float]] = defaultdict(deque)
+        self._calls = 0
 
     def allow(self, key: str, now: float | None = None) -> bool:
         now = time.monotonic() if now is None else now
+        self._calls += 1
+        if self._calls % self.SWEEP_EVERY == 0:
+            self._sweep(now)
         hits = self._hits[key]
         while hits and now - hits[0] > self.window:
             hits.popleft()
@@ -54,6 +61,12 @@ class RateLimiter:
             return False
         hits.append(now)
         return True
+
+    def _sweep(self, now: float) -> None:
+        """Drop clients with no hits inside the window so memory stays bounded."""
+        stale = [k for k, h in self._hits.items() if not h or now - h[-1] > self.window]
+        for key in stale:
+            del self._hits[key]
 
     def reset(self) -> None:
         self._hits.clear()
@@ -86,7 +99,7 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def security_headers(request: Request, call_next):  # type: ignore[no-untyped-def]
+async def security_headers(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
     response: Response = await call_next(request)
     for header, value in SECURITY_HEADERS.items():
         response.headers.setdefault(header, value)
@@ -120,7 +133,7 @@ async def sample() -> dict[str, str]:
 @app.post("/api/assess", response_model=ClauseAnalysis, tags=["analysis"])
 async def assess(payload: AnalyzeRequest) -> ClauseAnalysis:
     """Deterministic assessment only - no model call, instant and fully explainable."""
-    return analyze_document(payload.document_text)
+    return await asyncio.to_thread(analyze_document, payload.document_text)
 
 
 @app.post("/api/analyze-document", response_model=AnalyzeResponse, tags=["analysis"])

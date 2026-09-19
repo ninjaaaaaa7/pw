@@ -252,7 +252,9 @@ async def run_analysis(request: AnalyzeRequest) -> AnalyzeResponse:
     if cached is not None:
         return cached
 
-    analysis = analyze_document(request.document_text)
+    # The regex pipeline is CPU-bound; run it in the default thread pool so a
+    # large document never stalls other requests on the event loop.
+    analysis = await asyncio.to_thread(analyze_document, request.document_text)
 
     if not settings.ai_enabled:
         return demo_response(analysis, request)
@@ -264,7 +266,7 @@ async def run_analysis(request: AnalyzeRequest) -> AnalyzeResponse:
             # The rules engine found no contract clauses (e.g. a court filing),
             # so derive the headline score from the model's flags with the same
             # severity weights - otherwise the UI would show 0/100 beside HIGH risks.
-            score, level = score_risk(parsed.risk_flags, lopsided=False)  # type: ignore[arg-type]
+            score, level = score_risk(parsed.risk_flags, lopsided=False)
             analysis = analysis.model_copy(update={"risk_score": score, "risk_level": level})
         result = AnalyzeResponse(
             executive_summary=parsed.executive_summary.strip(),

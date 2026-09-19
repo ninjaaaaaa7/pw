@@ -92,6 +92,16 @@ def test_rate_limiter_window_expires():
     assert limiter.allow("ip", now=11.0)
 
 
+def test_rate_limiter_evicts_idle_clients():
+    limiter = RateLimiter(limit=5, window_seconds=10)
+    for i in range(RateLimiter.SWEEP_EVERY - 1):
+        limiter.allow(f"client-{i}", now=0.0)
+    assert len(limiter._hits) == RateLimiter.SWEEP_EVERY - 1
+    # The sweep call lands well outside the window: every idle client is dropped.
+    limiter.allow("fresh", now=100.0)
+    assert set(limiter._hits) == {"fresh"}
+
+
 def test_security_headers_present(client):
     response = client.get("/api/health")
     assert response.headers["X-Content-Type-Options"] == "nosniff"
