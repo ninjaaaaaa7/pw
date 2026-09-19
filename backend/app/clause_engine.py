@@ -234,6 +234,17 @@ DOCUMENT_TYPE_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
         (r"\bpetition(er)?\b", r"\bapplicant\b", r"\bhon'?ble\b", r"\bprayed\b", r"\bbail\b", r"\bFIR\b"),
     ),
     ("Legal notice", (r"\blegal\s+notice\b", r"\bcease\s+and\s+desist\b", r"\bdemand\s+notice\b")),
+    (
+        "Corporate / securities document",
+        (
+            r"\bregistration\s+statement\b",
+            r"\bsecurities\b",
+            r"\bpublic\s+offering\b",
+            r"\bshareholders?\b",
+            r"\bboard\s+of\s+directors\b",
+            r"\bexecutive\s+officers?\b",
+        ),
+    ),
 )
 
 OBLIGATION_PATTERN = re.compile(

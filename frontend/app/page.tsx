@@ -286,10 +286,9 @@ function Results({ analysis }: { analysis: Analysis }) {
         </div>
         {a.clauses.length === 0 && (
           <p className="mt-3 text-sm text-slate-700">
-            The score reflects the rule-based contract-clause scan, which matched nothing here
-            {a.document_type === "Court petition / application" || a.document_type === "Legal notice"
-              ? " — this is not a contract, so the AI-identified risks below are the ones to read."
-              : ". Any risks below were identified by the AI directly from the text."}
+            {analysis.risk_flags.length > 0
+              ? "The rule-based contract-clause scan matched nothing here, so the score is derived from the risks the AI identified directly in the text."
+              : "The rule-based contract-clause scan matched nothing here and no further risks were identified."}
           </p>
         )}
         {a.one_sided_toward && (

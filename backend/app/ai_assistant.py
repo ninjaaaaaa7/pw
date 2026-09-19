@@ -21,7 +21,7 @@ from collections import OrderedDict
 import httpx
 from pydantic import BaseModel, ValidationError
 
-from .clause_engine import analyze_document
+from .clause_engine import analyze_document, score_risk
 from .config import settings
 from .models import AnalyzeRequest, AnalyzeResponse, ClauseAnalysis, RiskFlag
 
@@ -260,6 +260,12 @@ async def run_analysis(request: AnalyzeRequest) -> AnalyzeResponse:
     try:
         raw = await _call_gemini(build_prompt(analysis, request))
         parsed = _ModelOutput.model_validate(raw)
+        if not analysis.clauses and parsed.risk_flags:
+            # The rules engine found no contract clauses (e.g. a court filing),
+            # so derive the headline score from the model's flags with the same
+            # severity weights - otherwise the UI would show 0/100 beside HIGH risks.
+            score, level = score_risk(parsed.risk_flags, lopsided=False)  # type: ignore[arg-type]
+            analysis = analysis.model_copy(update={"risk_score": score, "risk_level": level})
         result = AnalyzeResponse(
             executive_summary=parsed.executive_summary.strip(),
             risk_flags=parsed.risk_flags,

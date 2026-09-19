@@ -131,6 +131,10 @@ def test_lopsidedness_adds_penalty():
             "It is therefore prayed that the Hon'ble Court may direct the release of the applicant on bail.",
             "Court petition / application",
         ),
+        (
+            "Questionnaire for directors and executive officers for the registration statement.",
+            "Corporate / securities document",
+        ),
         ("Hello world.", "Legal agreement"),
     ],
 )

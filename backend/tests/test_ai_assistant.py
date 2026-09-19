@@ -185,3 +185,26 @@ def test_describe_failure_surfaces_api_message_without_secrets():
     assert ai_assistant._describe_failure(exc2).startswith("HTTP 502 - <html>")
 
     assert ai_assistant._describe_failure(ValueError("x")) == "ValueError"
+
+
+async def test_live_score_is_derived_from_model_flags_when_rules_find_nothing(monkeypatch):
+    monkeypatch.setattr(ai_assistant.settings, "gemini_api_key", "test-key")
+
+    async def court_flags(_prompt: str) -> dict:
+        return {
+            "executive_summary": "A bail application.",
+            "risk_flags": [
+                {"category": "other", "severity": "HIGH", "title": "Passport", "explanation": "x"},
+                {"category": "other", "severity": "MEDIUM", "title": "Travel", "explanation": "y"},
+            ],
+            "user_obligations": ["Surrender passport."],
+            "lawyer_questions": ["Q1?", "Q2?", "Q3?"],
+        }
+
+    monkeypatch.setattr(ai_assistant, "_call_gemini", court_flags)
+    req = AnalyzeRequest(document_text="It is prayed that the Hon'ble Court grant bail to the applicant.")
+    response = await ai_assistant.run_analysis(req)
+    assert response.mode == "live"
+    assert response.analysis.clauses == []
+    assert response.analysis.risk_score == 25  # HIGH (16) + MEDIUM (9)
+    assert response.analysis.risk_level == "MODERATE"
