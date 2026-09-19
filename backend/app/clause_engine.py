@@ -229,6 +229,11 @@ DOCUMENT_TYPE_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),
     ("Loan agreement", (r"\bloan\b", r"\bborrower\b", r"\blender\b", r"\bprincipal\b")),
     ("Purchase / sales agreement", (r"\bpurchase\b", r"\bbuyer\b", r"\bseller\b")),
+    (
+        "Court petition / application",
+        (r"\bpetition(er)?\b", r"\bapplicant\b", r"\bhon'?ble\b", r"\bprayed\b", r"\bbail\b", r"\bFIR\b"),
+    ),
+    ("Legal notice", (r"\blegal\s+notice\b", r"\bcease\s+and\s+desist\b", r"\bdemand\s+notice\b")),
 )
 
 OBLIGATION_PATTERN = re.compile(

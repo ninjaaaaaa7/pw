@@ -99,7 +99,12 @@ def build_prompt(analysis: ClauseAnalysis, request: AnalyzeRequest) -> str:
     lines += [
         "",
         f"Write executive_summary, explanations and questions in {request.language}.",
-        "Use the detected clause categories as the `category` values in risk_flags.",
+        "risk_flags must include every detected clause above, using its category value. "
+        "Then add any OTHER potential liabilities, penalties, deadlines, undertakings or adverse "
+        "consequences for the user that are evident in the document text but not covered by the "
+        "rules engine - use category `other` for those and quote the relevant wording. "
+        "If the rules engine found nothing (e.g. a court filing, notice or letter), the document "
+        "text is your primary source: list up to 5 such risks.",
         "Return exactly 3 lawyer_questions.",
         "",
         "<document>",
@@ -124,8 +129,10 @@ def demo_response(analysis: ClauseAnalysis, request: AnalyzeRequest) -> AnalyzeR
     else:
         summary = (
             f"This appears to be a {analysis.document_type.lower()} of about "
-            f"{analysis.word_count} words. None of the tracked high-risk clause "
-            f"categories were detected, giving a risk score of {analysis.risk_score}/100. "
+            f"{analysis.word_count} words. None of the tracked contract-risk clause "
+            f"categories were detected, giving a rule-based risk score of "
+            f"{analysis.risk_score}/100; risks specific to this kind of document may still "
+            f"exist and should be reviewed with an attorney. "
         )
     if analysis.one_sided_toward:
         summary += f"Most obligations fall on {analysis.one_sided_toward}."

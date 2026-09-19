@@ -46,6 +46,16 @@ def test_prompt_is_grounded_in_analysis():
     assert "<document>" in prompt and req.document_text in prompt
 
 
+def test_prompt_asks_for_document_specific_risks_when_rules_find_nothing():
+    req = AnalyzeRequest(document_text="It is prayed that the Hon'ble Court grant bail to the applicant.")
+    analysis = analyze_document(req.document_text)
+    assert analysis.clauses == []
+    prompt = ai_assistant.build_prompt(analysis, req)
+    assert "none of the tracked risk categories were found" in prompt
+    assert "category `other`" in prompt
+    assert "list up to 5 such risks" in prompt
+
+
 def test_demo_response_is_complete_and_deterministic():
     req = _request()
     analysis = analyze_document(req.document_text)

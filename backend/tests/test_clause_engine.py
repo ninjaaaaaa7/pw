@@ -127,6 +127,10 @@ def test_lopsidedness_adds_penalty():
         ("The Landlord leases the premises to the Tenant.", "Lease agreement"),
         ("Your use of the platform and website is subject to these Terms of Service.", "Terms of service"),
         ("The Borrower shall repay the loan principal to the Lender.", "Loan agreement"),
+        (
+            "It is therefore prayed that the Hon'ble Court may direct the release of the applicant on bail.",
+            "Court petition / application",
+        ),
         ("Hello world.", "Legal agreement"),
     ],
 )
